@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas width="300" height="200" id="canvas" style="border: solid 1px black; background-image: url('background.jpg')">
+</canvas>
+
+<script>
+    var x, y;
+    var clearBox = 0;
+    var play;
+    var poziom, pion;
+    var pozX, pozY;
+    var blockX = 4;
+    var blockY = 5;
+    var box = new Array(blockY);
+    var speedX = 1;
+    var speedY = 1;
+    var size = 70;
+    var extraSize = 0;
+
+
+    function createMap() {
+        for (var d = 0; d < blockY; d++) {
+            box[d] = new Array(blockX)
+            for (var e = 0; e < blockX; e++) {
+                box[d][e] = 1;
+            }
+        }
+        box[3][2] = 2;
+        box[3][1] = 2;
+    }
+
+    function checkColison(xBlock, yBlock, x, y) {
+        if (x > (xBlock * 70 + 10) && x < xBlock * 70 + 10 + 70 && y > (yBlock * 10 + 10) && y < (yBlock * 10 + 20)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    function powerUp(c, x, y) {
+        var random = Math.floor(Math.random() * 2) + 1;
+        document.getElementById("randomPowerUp").innerHTML = random;
+        if (random == 1) {
+            c.fillStyle = "green";
+            c.fillRect(x * 70 + 10, (y * 10) + 10, 10, 10);
+        }
+    }
+
+    function drawMap(c) {
+        var color;
+        for (var d = 0; d < blockY; d++) {
+            if (d == 0) {
+                c.fillStyle = "red";
+                color = "red";
+            } else if (d == 1) {
+                c.fillStyle = "yellow";
+                color = "yellow";
+            } else if (d == 2) {
+                c.fillStyle = "blue";
+                color = "blue";
+            } else if (d == 3) {
+                c.fillStyle = "purple";
+                color = "purple";
+            } else {
+                c.fillStyle = "green";
+                color = "green";
+            }
+            for (var e = 0; e < blockX; e++) {
+                if (box[d][e] == 1 || box[d][e] == 2) {
+                    if (box[d][e] == 2) {
+                        c.fillStyle = "grey";
+                    } else {
+                        c.fillStyle = color;
+                    }
+                    c.fillRect(e * 70 + 10, (d * 10) + 10, 70, 10);
+                    if (checkColison(e, d, x, y) == 1) {
+                        if (box[d][e] == 1) {
+                            powerUp(c, e, d);
+                            box[d][e] = 0;
+                            clearBox++;
+                        }
+                        if (poziom == 1 && pion == -1) {
+                            poziom = 1;
+                            pion = 1;
+                        } else if (poziom == 1 && pion == 1) {
+                            poziom = 1;
+                            pion = -1;
+                        } else if (poziom == -1 && pion == 1) {
+                            poziom = -1;
+                            pion = -1;
+                        } else if (poziom == -1 && pion == -1) {
+                            poziom = -1;
+                            pion = 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    function draw() {
+        var canvas = document.getElementById('canvas');
+        if (canvas.getContext) {
+            var c = canvas.getContext('2d');
+            c.clearRect(0, 0, 300, 200);
+            var image = new Image();
+            var image2 = new Image();
+            image.src = "ball.png";
+            image.onload = function () {
+                c.drawImage(image, x, y, 10, 10);
+            }
+
+            image2.src = "platform.png";
+            image2.onload = function () {
+                c.drawImage(image2,pozX - 25, 180, size + extraSize, 10);
+            }
+            drawMap(c);
+
+            //kierunek kulki
+            if (poziom == 1) {
+                x += speedX;
+            }
+            else x -= speedX;
+            if (pion == 1) y += speedY;
+            else y -= speedY;
+            document.getElementById("X").innerHTML = x;
+            document.getElementById("Y").innerHTML = y;
+            //wykrycie scian
+            if (x <= 0 || x == 0.5) poziom = 1; //ide w prawo, odbicie od lewej sciany
+            if (x >= 300 || x == 300.5) poziom = -1; //ide w lewo, odbicie od prawej sciany
+            if (y == 0 || y == 0.5) pion = 1; //ide w dol, odbicie od gornej sciany
+
+            if (y == 180 && (x > pozX - (35 + extraSize) && x < pozX + (43 + extraSize))) {
+                if (x > pozX - (35 + extraSize) && x < pozX - (15 + extraSize) || x > pozX + (20 + extraSize) && x < pozX + (43 + extraSize)) {
+                    speedY = 0.5;
+                    speedX = 1.5;
+                } else {
+                    speedY = 1;
+                    speedX = 1;
+                }
+                pion = -1;
+            }
+            else {
+                c.fillStyle = "rgb(255,0,255)";
+            }
+
+            if (y == 200) {
+                c.clearRect(0, 0, 300, 200);
+                alert("Koniec");
+                clearInterval(play);
+                unHiddenRestart();
+                speedX = 1;
+                speedY = 1;
+            }//pion=-1;//ide do gory, odbicie od dolnej sciany
+            checkWin(c);
+
+        }
+    }
+    function checkWin(c) {
+        if (clearBox == blockX * blockY - 2) {
+            c.clearRect(0, 0, 300, 200);
+            alert("Wygrana");
+            clearInterval(play);
+            unHiddenRestart();
+            clearBox = 0;
+            speedX = 1;
+            speedY = 1;
+        }
+    }
+    function play() {
+        y = 170;
+        x = 150;
+        pion = -1;//lecim w gore
+        poziom = 1;//lecin w prawo
+        createMap();
+        play = setInterval('draw()', 10);
+        hiddenPlay();
+    }
+
+    function restart() {
+        x = 150;
+        y = 170;
+        pion = -1;//lecim w dol
+        poziom = 1;//lecin w prawo
+        clearBox = 0;
+        createMap();
+        play = setInterval('draw()', 10);
+        hiddenRestart();
+    }
+
+
+    function pozycjaMyszki(e) {
+        pozX = 0;
+        pozY = 0;
+        if (!e) var e = window.event;
+        if (e.pageX || e.pageY) {
+            pozX = e.pageX;
+            pozY = e.pageY;
+        } else if (e.clientX || e.clientY) {
+            pozX = e.clientX + document.body.scrollLeft;
+            pozY = e.clientY + document.body.scrollTop;
+        }
+        document.getElementById("text").innerHTML = pozX;
+        document.getElementById("text2").innerHTML = pozY;
+        return {pozX, pozY}
+    }
+
+
+    document.onmousemove = function (e) {
+        pozycjaMyszki(e);
+    }
+
+    function unHiddenRestart() {
+        document.getElementById("restart").style.display = "block";
+    }
+
+    function hiddenPlay() {
+        document.getElementById("play").style.display = "none";
+    }
+
+    function hiddenRestart() {
+        document.getElementById("restart").style.display = "none";
+    }
+</script>
+<button id="play" onClick="play()">Play</button>
+<button id="restart" onClick="restart()" style="display: none">Restart</button>
+<div id="text">pozycja</div>
+<div id="text2">pozycja</div>
+<div id="X">pozycja</div>
+<div id="Y">pozycja</div>
+<div id="randomPowerUp">powerUp</div>
+<img src="ball.png" id="ball" width="10" height="10">
+</body>
+</html>
